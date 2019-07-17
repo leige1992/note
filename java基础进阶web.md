@@ -412,3 +412,51 @@ for(Element el: els) {
 + 500 服务器错误
 
 ### tomcat服务器
+
++ bin目录  服务器软件目录
++ conf 软件配置
++ lib 第三方的jar包
++ logs 日志文件
++ temp 临时目录
++ webapps 开发号的web项目，放在这里
++ work jsp文件的存储位置
+
+#### idea绑定tomcat服务器
+
++ run -->edit configuration --> 点击加号 --> tomcat server （选择local本地）
++ 随便起个名字 --> 导入tomcat安装目录 --> vm option ：-Xms128m -Xmx256m -XX:PermSize=128m -XX:MaxPermSize=256m --> 其他默认配置  下面是vm参数解释
++ **-vmargs** **说明后面是****VM****的参数，所以后面的其实都是****JVM****的参数了**
+  **-Xms128m JVM****初始分配的堆内存**
+  **-Xmx512m JVM****最大允许分配的堆内存，按需分配**
+  **-XX:PermSize=64M JVM****初始分配的非堆内存**
+  **-XX:MaxPermSize=128M JVM****最大允许分配的非堆内存，按需分配**
+
+#### idea创建web项目
+
++ file --> new --> module --> java Enterpirse 
+
+![1563355132333](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1563355132333.png)
+
+![1563355155759](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1563355155759.png)
+
+#### idea web项目目录结构
+
+![1563352063364](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1563352063364.png)
+
+#### web项目发布到tomcat
+
++ 修改发布文件的路径
++ 发布这个模块
++ 修改更新
+
+![1563355499329](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1563355499329.png)
+
+![1563355659382](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1563355659382.png)
+
+![1563355953920](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1563355953920.png)
+
+![1563355986323](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1563355986323.png)
+
+![1563356102137](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1563356102137.png)
+
+![1563357327625](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1563357327625.png)
