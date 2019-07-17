@@ -384,5 +384,33 @@ for(Element el: els) {
 }
 ~~~~~~
 
-#### 反射
+##### xpath解析xml文件
+
++ selectNodes("xpath表达式")     //获取多个节点
++ selectSingleNode("xpath表达式")   //获取一个节点
++ 表达式：//root//....       //root[last || 1]  找最后一个或者第一个
+
+~~~~~~java
+SAXReader sax = new SAXReader();
+Document doc = sax.read("leige01\\xml\\student.xml");
+Element name = (Element) doc.selectSingleNode("//name[@id='itcast2']"); //使用属性值查找
+System.out.println(name.getText());
+~~~~~~
+
+### idea的基本使用
+
+#### 目录结构
+
++ project(项目) -> module (模块)-> package(包)
+
+#### 常用的快捷键
+
++ alt+enter   自动导包  代码补全
++ ctrl+y  删除光标所在的行
++ ctrl+d   复制一行
++ ctrl+shift+l  格式化代码
++ ctrl+/  单行注释
++ ctrl+shift+/  多行注释
++ ctrl+shift+上线键      移动代码行
++ alt+4 关闭控制台
 
