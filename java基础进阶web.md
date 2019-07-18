@@ -564,3 +564,196 @@ System.out.println(name.getText());
 ![1563356102137](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1563356102137.png)
 
 ![1563357327625](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1563357327625.png)
+
+### servlet 快速入门
+
+#### 实现步骤
+
++ 创建实现类去实现tomcat提供的Servlet接口
+
+~~~~~~java
+public class QuikStartServlet implements Servlet {
+    @Override
+    public void service(ServletRequest req, ServletResponse res) throws 					ServletException, IOException {
+        res.getWriter().print("dassada");
+    }
+~~~~~~
+
+
+
++ 配置xml文件（通知tomcat去执行这个实现类）
+
+~~~~~~xml
+<servlet>
+    <servlet-name>haha</servlet-name>
+    <servlet-class>com.leige.lianxi.QuikStartServlet</servlet-class>
+</servlet>
+<servlet-mapping>
+    <servlet-name>haha</servlet-name>
+    <url-pattern>/first</url-pattern>
+</servlet-mapping>
+~~~~~~
+
+#### 自动代码补全设置
+
+![1563411883252](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1563411883252.png)
+
+#### 什么是servlet
+
+运行在服务器端的java小程序，是sun公司提供给的一套规范，处理客户端请求，响应数据
+
+#### 执行原理
+
+![1563418008028](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1563418008028.png)
+
++ 启动tomcat，扫描webapps目录， 读取项目中的web.xml文件
++ 接受客户端请求
++ 创建 request， response对象
++ 去xml文件中匹配虚拟路径 去找执行的类
++ 调用servlset实现类类 使用反射技术去创建对象  调对象中的service方法传入参数 request和response 
++ 数据写在response的缓冲区中
++ service结束response取出缓冲区数据，组装http的响应信息，回传浏览器
+
+#### servlet生命周期（init service  destroy）
+
++ tomcat文件夹下conf --> context  下面可以修改tomcat监视器  可以自动监视web.xml的修改  
+
++ init() 创建servlet对象时候调用 只调用一次
+
+~~~~~~java
+//配置tomcat启动时创建servlet对象
+<servlet>
+    <servlet-name>quik</servlet-name>
+    <servlet-class>com.leige.lianxi.QuikStartServlet</servlet-class>
+    <load-on-startup>2（写任意的整数，代表优先级，数字越小优先级越高）</load-on-startup>
+</servlet>
+~~~~~~
+
++ service()  客户端访问一次  执行一次
++ destory()  停止tomcat服务器      移除项目
+
+#### web.xml配置的详解
+
++ url-pattern匹配方式
+  + 完全匹配 /ab
+  + 目录匹配 /ad/da/*
+  + 完全匹配  *.abc
+
+#### 全局的web.xml  conf --> web.xml
+
++ 一些常用的配置
+
+~~~~~~~xml
+//设置session的超时时间 单位是分钟
+<session-config>
+	<session-timeout>30</session-timeout>
+</session-config>
+~~~~~~~
+
+#### 继承HtttServlet的原理
+
++ 继承可HttpServlet, 这个类的父类 实现了servlet接口
++ Tomcat服务器的调用这个类的service方法因为本类没有所以调用的是父类HttpServlet中service方法
++ 然后父类里面使用this，这时候的this指的是继承的子类对象调用doPost，doGet（屏蔽了程序员来判断get还是post）
+
+~~~~~~java
+public class RunSerlet extends HttpServlet {
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        response.getWriter().print(2312123);
+    }
+
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        doGet(request, response);
+    }
+}
+~~~~~~
+
+#### 修改servlet模板
+
++ file --> settings --> editor --> file and code template 
++ 右边的菜单栏有  file  includes code other   选择other
++ web --> java code template --> servlet class.java  修改保存即可
+
+#### ServletConfig对象
+
+##### 获取这个对象（有几个servlet就有几个这个对象）
+
++ 父类的父类中有个方法  getServletConfig() 子类直接使用即可
+
+##### 如何使用
+
++ 获取servlet的名字   config.getServletName()
++ 获取初始化参数值     config.getInitParameter("键值")
+
+~~~~~~xml
+//在servlet里面配置
+<init-param>
+  <param-name>leige</param-name>  //键
+  <param-value>111</param-value>  //值
+</init-param>
+~~~~~~
+
++ 获取servlet上下文对象   getServletContext()
+
+~~~~~~java
+public class ConfigServlet extends HttpServlet {
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        //获取servlet配置对象
+        ServletConfig config = getServletConfig();
+        //获取servlet名称
+        String name = config.getServletName();
+        //获取上下文
+        config.getServletContext();
+        //获取初始化参数
+        String leige = config.getInitParameter("leige");
+        response.getWriter().print(name+leige);
+    }
+
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        doGet(request, response);
+    }
+}
+
+~~~~~~
+
+#### servlet 通信总结
+
++ 新建servlet
++ 在web.xml里面配置 信息（一个是servlet一个是servlet-mapping）
+
+~~~~~~java
+public class UerLogin extends HttpServlet {
+
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String username = request.getParameter("username");
+        String pwd = request.getParameter("pwd");
+        if(username ==null || pwd == null) {
+            response.getWriter().print("error");
+        }else {
+            QueryRunner qr = new QueryRunner(C3P0Utils.getDs());
+            String sql = "select * from user where username=? and pwd=?";
+            try {
+                User u = qr.query(sql, new BeanHandler<User>(User.class), new Object[]{username, pwd});
+                if(u != null) {
+                    response.getWriter().print("succ");
+                }else {
+                    response.getWriter().print("error");
+                }
+            }catch (Exception e){e.printStackTrace();}finally {
+
+            }
+        }
+    }
+
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        doGet(request, response);
+    }
+}
+~~~~~~
+
+### response
+
+#### ServletContext对象（对应一个web应用程序 一个应用只有一个）一个接口 tomcat实现
+
+
+
