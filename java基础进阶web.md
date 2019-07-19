@@ -755,5 +755,283 @@ public class UerLogin extends HttpServlet {
 
 #### ServletContext对象（对应一个web应用程序 一个应用只有一个）一个接口 tomcat实现
 
+##### 是什么
 
++ 是一个web模块应用程序的上下文对象
+
+##### 怎么获取
+
++ 上节提到的先获取   getServletConfig().getServletContext()  
++ 父类中已经封装好了一个方法直接获取     getServletContext();
+
+##### 有什么用
+
++ 获取模块的初始化参数
+
+~~~~~~xml
+<context-param>
+    <param-name>leige</param-name>
+    <param-value>23</param-value>
+</context-param>
+~~~~~~
+
+~~~~~~java
+//获取这个对象   获取初始化参数
+ServletContext sc = getServletContext();
+System.out.println(sc.getInitParameter("leige"));
+~~~~~~
+
++ 获取绝对路径   getRealPath("里面写资源相对路径")
+
+~~~~~~java
+ServletContext sc = getServletContext();
+String apath = sc.getRealPath("WEN-INF/web.xml");
+System.out.println(apath);
+~~~~~~
+
+##### 域对象（所谓的域对象，说明这个对象是个容器，作用域是整个web应用程序）
+
++ setAttribute(String s, Object o)
++ getAttribute(String s);
++ removeAttribute(String s)
+
+~~~~~~java
+//在其他servlet都可以用  作用域是整个项目
+ServletContext sc = getServletContext();
+sc.setAttribute("haha", 111);
+~~~~~~
+
+##### 统计访问次数
+
++ ServletContext存储次数    每次访问++
+
+##### ServletContext空指针异常
+
++ 父类中写的init（ServletConfig config）对ServletContext赋值 并调用了this.init()空参方法
++ 如果子类继承使用 init（ServletConfig config）会覆盖父类的方法   造成赋值失败   造成空指针
++ 如果想写  init方法  请写空参构造
+
+##### servlet注解开发
+
+~~~~~~java
+@WebServlet(urlPatterns = "/count")
+public class CountServlet extends HttpServlet {
+
+~~~~~~
+
+#### response对象详解
+
++ 负责历览器的响应   ServletResponse接口   ， 由HttpServletResponse继承
++ 此接口对象是tomcat引擎来实现   调用由引擎传参
+
+##### 响应行
+
++ 设置状态码     setStatus(int 状态码)
+
+##### 响应头
+
++ addHeader(String key, String val)
++ addIntHeader(String key, intval)
++ addDateHeader(String key, longval)
++ ***setHeader*()   这个比较重要**     //response.addHeader("leige", "23");
++ setIntHeader()
++ setDateHeader()
+
+##### 响应体
+
++ getWriter()    //打印流   PrintWriter  只能做文本数据响应
+
++ getOutputStream()    //获取字节输出流
+
++ 解决中文乱码问题
+
+  + 问题原因是编码和解码不一样     默认是拉丁文编码     gbk解码
+
+  + 响应的数据没有直接回到客户端    写在response对象的缓冲区使用拉丁文编码    
+
+  + 设置缓冲区编码  response.setCharacterEncoding();
+
+  + ```
+    response.setContentType("text/html;charset=utf-8"); //一句话就可以告诉浏览器怎么解码
+    ```
+
++ 字节流响应非文本数据给浏览器
+
+~~~~~~java
+protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    //web根目录由一个a.jpg图片
+    String apath = getServletContext().getRealPath("a.jpg");
+    FileInputStream in = new FileInputStream(apath);
+    OutputStream out = response.getOutputStream();
+    byte[] bt = new byte[1024 * 2];
+    int len = 0;
+    while((len = in.read(bt)) != -1) {
+        out.write(bt, 0, len);
+    }
+    in.close();
+}
+~~~~~~
+
+##### 重定向
+
+![1563504828661](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1563504828661.png)
+
++ 可以设置状态码    重定向地址（response.setStatus(302)   response.setHeader("location", "地址")）
++ sun公司很人性化   提供了重定向的方法     
+
+~~~~~~java
+response.sendRedirect("/WEB03/redirect");  //设置重定向到。。。。
+~~~~~~
+
+##### 注意事项
+
++ 重定向过后不要再写代码
++ 写两个重定向
++ 两个流  有冲突   只能定义一个  因为缓冲区不能又是字节又是字符
+
+##### 文件的下载
+
+~~~~~~java
+response.setHeader("Content-Disposition", "attachment;fileName="+"a.pdf");   //通知浏览器下载文件，而不是打开这个文件
+~~~~~~
+
++ 控制下载文件的文件名称
+
+~~~~~~java
+String agent = request.getHeader("User-Agent");
+String filename="美女.jpg";
+if (agent.contains("MSIE")) {
+    // IE浏览器
+    filename = URLEncoder.encode(filename, "utf-8");
+    filename = filename.replace("+", " ");
+} else if (agent.contains("Firefox")) {
+    // 火狐浏览器
+    BASE64Encoder base64Encoder = new BASE64Encoder();
+    filename = "=?utf-8?B?" + base64Encoder.encode(filename.getBytes("utf-8")) + "?=";
+} else {
+    // 其它浏览器
+    filename = URLEncoder.encode(filename, "utf-8");
+}
+response.setHeader("Content-Disposition", "attachment;fileName="+filename+".pdf");
+//下面是使用流读取 写到浏览器
+~~~~~~
+
+##### 实现验证码
+
+~~~~~~java
+ //  前端你懂的
+protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+     //  创建画布
+     int width = 120;
+     int height = 40;
+     BufferedImage bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+     //  获得画笔
+     Graphics g = bufferedImage.getGraphics();
+     //  填充背景颜色
+     g.setColor(Color.white);
+     g.fillRect(0, 0, width, height);
+     //  绘制边框
+     g.setColor(Color.red);
+     g.drawRect(0, 0, width - 1, height - 1);
+     //  生成随机字符
+     //  准备数据
+     String data = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890";
+     //  准备随机对象
+     Random r = new Random();
+     //  声明一个变量 保存验证码
+     String code = "";
+     //  书写4个随机字符
+     for (int i = 0; i < 4; i++) {
+         //  设置字体
+         g.setFont(new Font("宋体", Font.BOLD, 28));
+         //  设置随机颜色
+         g.setColor(new Color(r.nextInt(255), r.nextInt(255), r.nextInt(255)));
+
+         String str = data.charAt(r.nextInt(data.length())) + "";
+         g.drawString(str, 10 + i * 28, 30);
+
+         //  将新的字符 保存到验证码中
+         code = code + str;
+     }
+     //  绘制干扰线
+     for (int i = 0; i < 6; i++) {
+         //  设置随机颜色
+         g.setColor(new Color(r.nextInt(255), r.nextInt(255), r.nextInt(255)));
+
+         g.drawLine(r.nextInt(width), r.nextInt(height), r.nextInt(width), r.nextInt(height));
+     }
+
+     //  将验证码 打印到控制台
+     System.out.println(code);
+
+     //  将验证码放到session中
+     //request.getSession().setAttribute("code_session", code);
+
+     //  将画布显示在浏览器中
+     ImageIO.write(bufferedImage, "jpg", response.getOutputStream());
+ }
+~~~~~~
+
+### request对象（获得请求）
+
+  #### ServletRequest 的子接口 HttpServletRequest
+
++ 实现类是tomcat引擎创建好的
+
+#### 获取请求行
+
++ **获取请求的方式**
+
+~~~~~~java
+//返回值GET  POST
+String method = request.getMethod();
+System.out.println(method);
+~~~~~~
+
++ 获取请求的参数，请求的服务器路径 String getRequestURI()
+
++ 获取请求的参数，请求服务器路径  StringBuffer  getRequestURL()
+
+~~~~~~java
+//url统一资源定位符    uri统一资源标识符
+StringBuffer url = request.getRequestURL();
+String uri = request.getRequestURI();
+System.out.println(url); //     http://localhost:8080/WEB04/line
+System.out.println(uri); //     /WEB04/line
+~~~~~~
+
++ **获取应用服务器文件名称  request.getContextPath()  //      /WEB04**
+
++ String     getQueryString()   //获取问号后面的所有参数
+
+#### 获取请求头（k: v  指导服务器的）
+
++ String getHeader(String key)    //返回一个键对应的值  referer//返回的是上一个页面的来源 用这个判断可以防盗链
++ Enumeration   getHeaderNames()    //这个是迭代器的前身    两个方法     hasMoreElements()   nextElment()
+
+~~~~~~java
+Enumeration<String> enu = request.getHeaderNames();
+while(enu.hasMoreElements()) {
+    System.out.println(enu.nextElement());
+    //再用getHeader获取值
+}
+~~~~~~
+
+#### 获取请求参数
+
++ String  getParameter("传递的name值") //获取指定的请求参数
++ String[] getParameterValues("传递name的值")  //一键多值的情况   例如cehckbox
++ Map<String, String[]> getParameterMap()    //获取所有的键值
+
+~~~~~~java
+ //获取请求参数的三个方法
+String val = request.getParameter("username");
+
+String[] s = request.getParameterValues("haha");
+
+Map<String, String[]> map = request.getParameterMap();
+for(Map.Entry<String, String[]> m: map.entrySet()) {
+    System.out.println(m.getKey()+"-->"+m.getValue());  //注意value是数组
+}
+~~~~~~
 
