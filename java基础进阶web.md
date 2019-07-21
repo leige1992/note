@@ -1035,3 +1035,144 @@ for(Map.Entry<String, String[]> m: map.entrySet()) {
 }
 ~~~~~~
 
+#### request域对象
+
++ 作用域是一次请求
++ setAttribute(String s, Object o)
++ getAttribute(String key)
++ removeAttribute(String key)
+
+#### request处理中文乱码问题
+
+##### 出现的原因
+
++ 浏览器是utf8 编码的   但是服务器解码默认使用iso8859-1
+
+##### 处理方法
+
++ tomcat 8.5以上版本 使用  request.setCharacterEncoding()   
++ 8.5版本以下   get参数不适用 
+
+~~~~~~java
+String username = request.getParameter("username");
+// 首先用拉丁编码把乱码转成字节   然后用utf-8转成字符串
+new String(username.getBytes("iso8859-1"), "utf-8");
+~~~~~~
+
+#### 转发
+
++ RequestDidpacher        getRequestDidpacher()    //获得转发器
++  forword(request, response)   //转发
+
+~~~~~~java
+//将servlet1请求转发给servlet2
+protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    //设置转发
+    request.setAttribute("leige", "java");
+    RequestDispatcher rd = request.getRequestDispatcher("/servlet2");
+    rd.forward(request, response);
+}
+~~~~~~
+
+#### 转发和重定向的区别
+
+##### 重定向
+
++ 浏览器两次请求
++ 浏览器地址栏发生变化
++ 重定向可以区外网
++ 重定向写web应用名称  /web04/servlet2
++ 浏览器看到的结果是servlet2
+
+##### 转发（wait()  //释放锁      sleep()  //不释放锁）
+
++ 浏览器一次请求
++ 浏览器地址不变
++ 转发是服务器内部行为，浏览器不知道，不能到外网
++ 转发不能写web应用名称
++ 浏览器看到结果servlet2
+
+#### javaEE三层架构 （高内聚，低耦合）
+
+##### 用户注册案例
+
++ 创建数据库
++ 创建新的module
++ 创建包
+  + 添加jar
+  + 配置文件
++ 功能编写服务器程序
+
+#### BeanUtils静态方法  
+
++ BeanUtils.populate(对象， 取到的map)
+
+#### 登陆注册案例的实现
+
++ 创建数据库
++ 创建项目 （web , service, dao, domain, utils）
+
+### 会话技术
+
+#### 什么叫会话
+
++ 打开一次浏览器   访问某个页面  只要不关闭浏览器   就算一次会话   再次访问还是算一次会话
++ 服务器的session存储   由客户端用cookie存储     就像超市密码柜    纸条相当于cookie   柜子是服务器
+
+#### 像浏览器发送cookie 本质是当文件来存储的
+
+~~~~~~java
+//设置cookie
+Cookie cookie = new Cookie("leige", "java");
+//发送到客户端
+response.addCookie(cookie);
+~~~~~~
+
+#### 获取浏览器请求的cookie
+
++ request 有一个方法叫   getCookies()    //返回保存多哥cookie数组
++ Cookie    有方法叫    getName()  //获取键     getValue()   //返回值
+
+~~~~~~java
+Cookie[] cs = request.getCookies();
+for(Cookie c: cs) {
+    System.out.println(c.getValue());
+}
+~~~~~~
+
+#### cookie中使用中文（不建议使用中文）
+
++ 只有8版本才支持cookie设置中文
++ 如果想在低版本 
+
+~~~~~~java
+URLEncoder.encode(String s, String charsetname)
+URLDecoder.decode(String s, String charsetname)
+
+~~~~~~
+
+#### cookie的携带路径
+
++ 并不是每次请求都会携带cookie，浏览器携带cookie，在cookie产生的路径下，例如abc/下面产生的cookie只会在该路径下面访问  会携带cookie
++ 所以要设置cookie的携带路径
+
+~~~~~~java
+protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    Cookie co = new Cookie("leige", "java");
+    // 返回设置的cookie
+    //设置cookie的携带路径 为整个模块下面
+    co.setPath(request.getContextPath());
+    response.addCookie(co);
+}
+~~~~~~
+
+#### cookie的生存时间
+
++ 生存时间默认是当前的会话
++ 设置生存时间，cookie对象的方法 setMaxAge(单位是秒)
+
+#### 记录上一次的访问时间案例
+
+
+
+​	
