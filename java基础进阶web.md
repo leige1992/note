@@ -1488,5 +1488,5 @@ protected void doGet(HttpServletRequest request, HttpServletResponse response) t
 
 ##### jsp model2 (mvc)
 
-
+![1563788457433](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1563788457433.png)
 
