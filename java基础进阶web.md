@@ -1476,7 +1476,7 @@ protected void doGet(HttpServletRequest request, HttpServletResponse response) t
 
 ~~~~~~jsp
  <c:forEach items="${arr} var="i" varStatus="vs">
-     ${i}, ${vs.count}//取出存取的值
+     ${i}, ${vs.count}//取出存取的值  后面是循环的次数
 </c:forEach>
 ~~~~~~
 
@@ -1489,4 +1489,91 @@ protected void doGet(HttpServletRequest request, HttpServletResponse response) t
 ##### jsp model2 (mvc)
 
 ![1563788457433](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1563788457433.png)
+
+#### 商品展示案例 ......
+
+##### 展示后来商品  （这个之前做过）
+
+##### 删除商品信息 （根据传入的主键进行修改）
+
+##### 查询商品
+
+##### 分页（主要是封装pagebean对象，以后的分页就需要这五个数据）
+
++ 当前页  currentPage
++ 总条数  totalCount
++ 总页数  totalPage
++ 每页显示的个数  everyCount
++ 每页显示的数据  list 
+
+### 监听器和过滤器（像安检一样）
+
+#### 客户端和资源之间
+
+#### 实现步骤
+
++ 配置xml
+
+~~~~~~xml
+<filter>
+    <filter-name>my</filter-name>
+    <filter-class>com.leige.Filter.MyFilter</filter-class>
+</filter>
+<filter-mapping>
+    <filter-name>my</filter-name>
+    <url-pattern>/*</url-pattern>
+</filter-mapping>
+~~~~~~
+
++ 实现接口的方法
+
+~~~~~~~java
+System.out.println("filter1");
+//放行
+filterChain.doFilter(servletRequest, servletResponse);
+~~~~~~~
+
+#### 过滤器的生命周期
+
++ init  过滤器对象创建       tomcat服务器启动时创建
++ doFilter（）   //过滤被访问的资源的时候
++ destory    // 停掉服务器之前被调用
+
+####  过滤器的配置
+
++ 绝对匹配   /abc  
++ 目录匹配   /abc/*
++ 后缀名匹配
+
+#### 直接配置过滤器
+
+```java
+@WebFilter(urlPatterns = "/filter1")
+```
+
+#### 过滤器的执行顺序
+
++ 配置文件看 mapping位置
++ 注解开发看 类名的自然顺序
+
+#### 过滤器解决中文乱码问题
+
+~~~~~~java
+request.setCharacterEncoding(); //写在全局额过滤器中
+~~~~~~
+
+### 监听器
+
+#### 监听某个组件的变化 主要是 request，session, servletContext
+
+#### 监听器的接口
+
+![1564112094241](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1564112094241.png)
+
+
+
+##### 唯一比较实用的是servletContextListener
+
++ 注解开发  @WebListener
++ 配置开发  
 
