@@ -1050,7 +1050,7 @@ for(Map.Entry<String, String[]> m: map.entrySet()) {
 
 ##### 处理方法
 
-+ tomcat 8.5以上版本 使用  request.setCharacterEncoding()   
++ tomcat 8.5以上版本 使用  request.setCharacterEncoding()   //高版本设置这一个就可以了
 + 8.5版本以下   get参数不适用 
 
 ~~~~~~java
@@ -1130,7 +1130,7 @@ response.addCookie(cookie);
 
 #### 获取浏览器请求的cookie
 
-+ request 有一个方法叫   getCookies()    //返回保存多哥cookie数组
++ request 有一个方法叫   getCookies()    //返回保存多个cookie数组
 + Cookie    有方法叫    getName()  //获取键     getValue()   //返回值
 
 ~~~~~~java
@@ -1173,6 +1173,407 @@ protected void doGet(HttpServletRequest request, HttpServletResponse response) t
 
 #### 记录上一次的访问时间案例
 
+~~~~~~java
+protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    //获取cookie  看是否存取值
+    Cookie[] cos = request.getCookies();
+    if(cos == null) {
+        //设置编码
+        response.setContentType("text/html;charset=utf-8");
+        response.getWriter().print("欢迎第一次访问");
+
+        //获取当前时间  保存为用户可以看懂的格式
+        SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd-hh-mm-ss");
+        String s = sf.format(new Date());
+        //设置cookie保存这次的访问时间
+        Cookie co = new Cookie("lastDate", s);
+        //设置失效时间 单位是秒
+        co.setMaxAge(10*60);
+        //设置携带路径
+        co.setPath(request.getContextPath());
+        response.addCookie(co);
+    }else {
+        for(Cookie co: cos) {
+            if (co.getName().equals("lastDate")) {
+                //设置编码 
+                response.setContentType("text/html;charset=utf-8");
+                response.getWriter().print("你的上一次访问时间是" + co.getValue());
+            }
+        }
+        //获取当前时间  保存为用户可以看懂的格式
+        SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd-hh-mm-ss");
+        String s = sf.format(new Date());
+        //设置cookie保存这次的访问时间
+        Cookie co = new Cookie("lastDate", s);
+        //设置携带路径
+        co.setPath(request.getContextPath());
+        response.addCookie(co);
+    }
+
+}
+~~~~~~
+
+#### session
+
++ HttpSession接口实现类对象是session      
++ request.getSession();   //作用域是一次会话有效  （只要浏览器不关闭就有效）
++ setAttribute()   getAttribue()      removeAttribute()
+
+#### 持久化session存储
+
++ 实际上session的持久化 是客户端cookie的持久化  把服务器的sessionid存到浏览器cookie中  下次访问就可以访问的到
++ getSession方法干了很多事
+  + 获得浏览器携带的cookie
+  + 找一个键sessionid（对应一个session域对象）   找到或者找不到
+  + 找不到就新创建一个session域对象
+  + 找到sessionid 然后区session中找id对应的session
+  + 如果匹配到了  不会新创建而是直接找到拿来用   
+  + 找不到就新创建session域对象
+
+~~~~~~java
+//存储session的值  并返回session的id保存到cookie中   键名叫JSESSIONID
+HttpSession session = request.getSession();
+session.setAttribute("leige", "磊哥");
+//session域的唯一编号  存到cookie 下次访问直接使用这个 session相当于小票
+String id  = session.getId();
+Cookie co = new Cookie("JSESSIONID", id);
+co.setPath(request.getContextPath());
+co.setMaxAge(60 * 10);
+response.addCookie(co);
+~~~~~~
+
+~~~~~~java
+//取出值  这就是session的持久化
+HttpSession session = request.getSession();
+System.out.println(session.getAttribute("leige"));
+~~~~~~
+
+#### session对象的生命周期
+
++ 什么时候创建
+  + request.getSession()  Cookie中的id和服务器大的id匹配不上就创建
+
++ session什么时候销毁
+  + 默认30分钟销毁 ，tomcat全局配置为你按web.xml
+  + 调用方法session.invalidate()
+  + 关闭服务器（非正常关闭服务器）
+
+#### 清除cookie
+
++  覆盖的方法
+  + 保证同名键
+  + 保证相同的携带路径
+  + setMaxAge(0)   //覆盖cookie法
+
+#### 验证码案例分析
+
+~~~~~~java
+//取出服务器中session保存的验证码的值和客户端提交的值进行对比
+protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    HttpSession session = request.getSession();
+    String code = (String)session.getAttribute("code_session");
+    if(code.equalsIgnoreCase(request.getParameter("yanzheng"))) {
+        response.getWriter().print("succ");
+    }else {
+        response.getWriter().print("err");
+    }
+}
+~~~~~~
+
+#### session和cookie的比较
+
+![1563761212083](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1563761212083.png)
 
 
-​	
+
+### jsp(java的动态服务器端网页技术)java server page
+
+#### 在html中潜入java代码
+
++ <%%>
++ <%=%>
++ <%!%>  声明的变量  变成成员变量   基本不使用
+
+#### jsp运行的原理
+
++ 本质就是servlet
+
+![1563762734599](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1563762734599.png)
+
+#### jsp注释
+
++ <!-- -->jsp中存在，翻译后.java存在，浏览器中也存在
++ <%  //   /* */%>  浏览器中不存在
++ <%-- --%>  旨在jsp源码中存在
+
+#### jsp的九大内置对象
+
++ **request**
++ **response**
++ ServletContext对象，在jsp中写只能写application
++ ServletConfig -->config(jsp service里面声明的)
++ **session**
++ out 继承Writer
++ this 当前jsp类对象（page）
++ **PageContext 最小域对象       作用域是当前页面**
++ Exception 异常
+
+### el表达式
+
+#### 从域中取数据表达式  （${表达式}）
+
++ application.setAttribute(String key, Object value)   //原本就是ServletContext
+  + ${applicationScope.key}
++ session
+  + ${sessionScope.key}
++ request
+  + ${requestScope.key}
++ pageContext
+  + el表达式 ${pageScope.key}
++ 简化写法${key}   : el自动从最小的域开始找，找不到就不找了
+
+~~~~~~jsp
+<%
+application.setAttribute("haha", "这是最大域");
+session.setAttribute("haha","session域");
+request.setAttribute("haha","request域");
+pageContext.setAttribute("haha", "page域");
+%>
+<%-- 取不到是空字符串  友好度提升--%>
+${applicationScope.haha}
+${sessionScope.haha}
+${requestScope.haha}
+${pageScope.haha}
+${haha}//默认从最小的域开始找
+~~~~~~
+
+#### 存储user用户到域对象（list集合中）并且取出 （对比el标签的好处）
+
+~~~~~~jsp
+<body>
+    <%
+        Addr addr1 = new Addr();
+        addr1.setLocation("北京5环");
+        addr1.setName("北京");
+
+        Addr addr2 = new Addr();
+        addr2.setLocation("南京6环");
+        addr2.setName("南京");
+
+        User user1 = new User();
+        user1.setAddr(addr1);
+        User user2 = new User();
+        user2.setAddr(addr2);
+        ArrayList<User> list = new ArrayList<User>();
+        list.add(user1);
+        list.add(user2);
+        pageContext.setAttribute("list", list);
+    %>
+    <%=list.get(0).getAddr().getName()%>
+    ${list[1].addr.name}
+</body>
+~~~~~~
+
+#### 存储user用户到域对象（map集合中）并且取出 （对比el标签的好处）
+
+~~~~~~jsp
+<body>
+<%
+    Addr addr1 = new Addr();
+    addr1.setLocation("北京5环");
+    addr1.setName("北京");
+
+    Addr addr2 = new Addr();
+    addr2.setLocation("南京6环");
+    addr2.setName("南京");
+
+    User user1 = new User();
+    user1.setAddr(addr1);
+    User user2 = new User();
+    user2.setAddr(addr2);
+    Map<String, User> map = new HashMap<String, User>();
+    map.put("u1", user1);
+    map.put("u2", user2);
+    pageContext.setAttribute("map", map);
+%>
+    ${map.u1.addr.name}
+    ${pageScope.map.u1.addr.name}
+    ${pageScope.map['u1'].addr.name}
+</body>
+~~~~~~
+
+#### el取出内置对象的数据
+
++ pageContext
+  + 获取jsp内置对象request    
+  + pageContext.request.contextPath  //获取文本应用名称
+
++ cookie.键名.value  //获取cookie的值
+
+#### el运算符
+
++ 三元运算符   ${num>4? "haha": "hehe"}
++ 判空  ${empty str}   
+  + 对象是否为null
+  + 字符串""
+  + 数据集合长度是否>0
+
+#### 记录上次的用户名
+
+~~~~~~java
+protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    //利用cookie存储
+    String username = request.getParameter("username");
+    String password = request.getParameter("password");
+    String rem = request.getParameter("rem");
+    if(rem == null) {
+        Cookie co = new Cookie("uname", username);
+        co.setMaxAge(0);
+        response.addCookie(co);
+    }
+    if(rem!=null && rem.equals("rem")) {
+        Cookie co = new Cookie("uname", username);
+        response.addCookie(co);
+    }
+    //判断
+    if(username.equals("tom") && password.equals("123")) {
+        response.sendRedirect(request.getContextPath());
+    }else {
+        response.sendRedirect(request.getContextPath()+"/login.jsp");
+    }
+}
+~~~~~~
+
+### jstl标签库
+
+#### 使用标签库
+
++ 在开头引入标签库
++ 指令 <%@ taglib  prefix="c" uri='....'%>
+
+#### if标签
+
+~~~~~~java
+<body>
+    <%
+        pageContext.setAttribute("leige", 5);
+    %>
+    <c:if test="${leige>2}">
+        <div>nihao</div>
+    </c:if>
+</body>
+~~~~~~
+
+#### foreach标签
+
+~~~~~~~jsp
+ <c:forEach begin="1" end="5" var="i" //i 自动存储到pageContext域中   step="2">
+     ${i}//取出存取的值
+</c:forEach>
+~~~~~~~
+
+#### 增强for循环
+
+~~~~~~jsp
+ <c:forEach items="${arr} var="i" varStatus="vs">
+     ${i}, ${vs.count}//取出存取的值  后面是循环的次数
+</c:forEach>
+~~~~~~
+
+#### 开发模式发展历史
+
+##### jsp model1 第一代（全是jsp）
+
+##### jsp model1 第二代 （把业务的逻辑内容放到javaBean中）
+
+##### jsp model2 (mvc)
+
+![1563788457433](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1563788457433.png)
+
+#### 商品展示案例 ......
+
+##### 展示后来商品  （这个之前做过）
+
+##### 删除商品信息 （根据传入的主键进行修改）
+
+##### 查询商品
+
+##### 分页（主要是封装pagebean对象，以后的分页就需要这五个数据）
+
++ 当前页  currentPage
++ 总条数  totalCount
++ 总页数  totalPage
++ 每页显示的个数  everyCount
++ 每页显示的数据  list 
+
+### 监听器和过滤器（像安检一样）
+
+#### 客户端和资源之间
+
+#### 实现步骤
+
++ 配置xml
+
+~~~~~~xml
+<filter>
+    <filter-name>my</filter-name>
+    <filter-class>com.leige.Filter.MyFilter</filter-class>
+</filter>
+<filter-mapping>
+    <filter-name>my</filter-name>
+    <url-pattern>/*</url-pattern>
+</filter-mapping>
+~~~~~~
+
++ 实现接口的方法
+
+~~~~~~~java
+System.out.println("filter1");
+//放行
+filterChain.doFilter(servletRequest, servletResponse);
+~~~~~~~
+
+#### 过滤器的生命周期
+
++ init  过滤器对象创建       tomcat服务器启动时创建
++ doFilter（）   //过滤被访问的资源的时候
++ destory    // 停掉服务器之前被调用
+
+####  过滤器的配置
+
++ 绝对匹配   /abc  
++ 目录匹配   /abc/*
++ 后缀名匹配
+
+#### 直接配置过滤器
+
+```java
+@WebFilter(urlPatterns = "/filter1")
+```
+
+#### 过滤器的执行顺序
+
++ 配置文件看 mapping位置
++ 注解开发看 类名的自然顺序
+
+#### 过滤器解决中文乱码问题
+
+~~~~~~java
+request.setCharacterEncoding(); //写在全局额过滤器中
+~~~~~~
+
+### 监听器
+
+#### 监听某个组件的变化 主要是 request，session, servletContext
+
+#### 监听器的接口
+
+![1564112094241](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1564112094241.png)
+
+
+
+##### 唯一比较实用的是servletContextListener
+
++ 注解开发  @WebListener
++ 配置开发  
+
