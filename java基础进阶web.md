@@ -1577,3 +1577,181 @@ request.setCharacterEncoding(); //写在全局额过滤器中
 + 注解开发  @WebListener
 + 配置开发  
 
+##### ServletContextEvent对象
+
++ Object   getSource() 所有监听事件对象的通用方法
++ ServletContext   getServletContext()  //这个对象特有
+
+### redis
+
+#### NOSQL(内存数据库)
+
+##### 为什么需要这个技术
+
++ 高并发
++ 海量数据查询读写
++ 数据库扩展性
+
+#### 安装redis并且设置到win的服务中
+
++ redis-server.exe --service-install redis.windows.conf   //注册为本地服务
+
+#### redis支持的五种数据类型
+
+##### 客户端操作的命令（Strig）
+
++ set  key value  //设置值
++ get key //获取值
++ incr key   //key随便写   默认从0开始递增
++ decr key 
++ incrby key step
++ decr key step
+
+##### List
+
++ lpush  key value...    从左边插入值
++ lrange  key  start  end    //写0 -1 遍历所有
++ lpop key   //从左边删除一个元素
++ rpop key //从右边删除一个元素
+
+#### hash类型
+
++ hset key   key  value
++ hget key   key   //获取值
++ hdel key   key...  //删除
++ hgetall key
+
+#### set类型
+
++ sadd key   //sadd myset a b c
++ smembers key  //获取set中所有成员
++ srem key   //srem myset a b 删除a和b
+
+#### sortsset 有序
+
++ zadd key value...    zadd mysort   10 haha  12 leige 23  hehe
++ zrem key vakue 删除
++ zrange key start end 
+
+#### 通用命令
+
++ keys *  查看所有键
++ exists key 判断有没有这个键    没有反0 有1
++ type key  判断类型
++ del key   删除这个键
+
+#### 持久化机制
+
++ RDB  默认的配置
++ AOF  导出文件的形式  appendonly yes  打开aof机制    在配置文件中找
+
+~~~~~~
+# appendfsync always   //保存一次持久化一次
+appendfsync everysec    //每秒钟保存一次
+# appendfsync no   //不持久化
+~~~~~~
+
+#### java连接redis（先要导包）
+
+~~~~~~java
+Jedis jedis = new Jedis("localhost", 6379);
+jedis.set("leige", "12");
+System.out.println(jedis.get("leige"));
+jedis.close();
+~~~~~~
+
+#### 数据库连接池 操作redis
+
+~~~~~~java
+//首先配置
+JedisPoolConfig config = new JedisPoolConfig();
+config.setMaxTotal(50);//最大连接数
+config.setMaxIdle(20);//最大空闲数
+JedisPool jp = new JedisPool(config, "localhost", 6379);
+Jedis jedis = jp.getResource();
+System.out.println(jedis.get("haha"));
+jedis.close();
+jp.close();
+~~~~~~
+
+#### 补充 ResouceBundle
+
+~~~~~~java
+ResouceBundle rb = new ResouceBundle("不写后缀名的properties文件");
+ResouceBundle bundle = rb.getBundle();
+bundle.getString(key) //获取键对应的值
+~~~~~~
+
+#### 封装reids 工具类
+
+~~~~~~java
+public class JedisUtils {
+    private static String host;
+    private static int port;
+    private static int maxTotal;
+    private static int maxIdle;
+    private static JedisPool jp;
+    static {
+        //创建连接池
+        ResourceBundle resourceBundle = ResourceBundle.getBundle("jedis");
+        host = resourceBundle.getString("host");
+        port = Integer.parseInt(resourceBundle.getString("port"));
+        maxTotal = Integer.parseInt(resourceBundle.getString("maxTotal"));
+        maxIdle = Integer.parseInt(resourceBundle.getString("maxIdle"));
+        //配置redis连接池
+
+        JedisPoolConfig config = new JedisPoolConfig();
+        config.setMaxTotal(maxTotal);
+        config.setMaxIdle(maxIdle);
+        jp = new JedisPool(config, host, port);
+    }
+    public static Jedis getJedis() {
+        return jp.getResource();
+    }
+    public static void close(Jedis jedis) {
+        if(jedis!=null) jedis.close();
+    }
+    public static void close(JedisPool jedisPool) {
+        if(jedisPool!=null) jedisPool.close();
+    }
+}
+~~~~~~
+
+~~~~~~java
+public static void main(String[] args) {
+    Jedis jedis = JedisUtils.getJedis();
+    System.out.println(jedis.get("haha"));
+}
+~~~~~~
+
+#### bean工厂的简单实现
+
+##### 写bean.properties的配置文件
+
+~~~~~~java
+UserAddService=com.leige.service.impl.UserAddServiceImpl
+~~~~~~
+
+##### 写bean工厂
+
+~~~~~~java
+//这个工厂的含义  就是传一个接口   返回一个实现类对象 这样就算改service也不需要动web包里面的东西 实现解耦和   service和dao层同样也是如此
+public class BeanFactory {
+    public static  <T>T newInstance(Class<T> clazz) {
+        String key = clazz.getSimpleName();
+        ResourceBundle resourceBundle = ResourceBundle.getBundle("bean");
+        resourceBundle.getString(key);
+        try {
+            return (T)Class.forName(resourceBundle.getString(key)).newInstance();
+        }catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return null;
+    }
+}
+~~~~~~
+
+
+
+
+
