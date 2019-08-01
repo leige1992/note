@@ -1751,7 +1751,57 @@ public class BeanFactory {
 }
 ~~~~~~
 
+### Maven
 
+#### 作用
+
++ 统一管理jar包  
++ 对项目生命周期的管理（编译，测试，打包，部署，运行）
+
+#### 配置maven
+
+##### 编辑环境变量
+
++ 配置MAVEN_HOME
++ 添加路径到path中
+
+##### 配置本地仓库的路径
+
++ 到cong下找settins.xml  找到localStorage
+
+~~~~~~xml
+<localRepository>D:\maven\apache-maven-3.3.9\repository</localRepository
+~~~~~~
+
+##### idea绑定maven
+
++ settings 搜索maven然后配置路径
++ 选择runner选择jdk版本   然后配置vmoptions：**-DarchetypeCatalog=local**
+
+#### 写一个简单的form表单
+
+##### 首先配置依赖的jar包
+
++ <https://mvnrepository.com/> 直接上网上查
+
+#### maven的生命周期
+
+#### 依赖范围
+
+![1564472316181](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1564472316181.png)
+
+#### 自定义骨架
+
+- archetype:create-from-project 创建骨架来自工程
+- install 安装到本地仓库
+- archetype:crawl 抓取本地仓库骨架
+
+~~~~~~xml
+<plugin>
+    <artifactId>maven-archetype-plugin</artifactId>
+    <version>3.0.0</version>
+</plugin>
+~~~~~~
 
 
 
